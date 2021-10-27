@@ -1,0 +1,218 @@
+---
+title: "OCMR_SC"
+author: "YZL"
+date: "2/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyquant)
+library(readr)
+library(dplyr)
+library(car)
+library(xts)
+library(caret)
+library(e1071)
+library(ROSE)
+library(DMwR)
+library(VIM)
+library(mice)
+library(showtext)
+library(scorecard)
+library(Boruta)
+```
+
+```{r}
+OCMR <- read.csv("/Users/yizhenglu/Downloads/OCMR论文/Knn_full.csv")
+```
+
+```{r}
+m <-lm(Cato~.,data = OCMR)
+vif(m)
+```
+
+```{r}
+OCMR$Cato = ifelse(OCMR$Cato ==0,0,1)#I created valid column (0 = valid, 1 = fraud)
+
+```
+
+```{r}
+typeof(OCMR$Cato)
+```
+
+```{r}
+dt_list = split_df(OCMR, y="Cato", ratio = 0.6, seed = 30)
+label_list = lapply(dt_list, function(x) x$Cato)
+head(dt_list)
+```
+
+
+```{r}
+Bo <- Boruta(Cato~.,data = OCMR,pValue = 0.01,doTrace=2,maxRuns = 20)
+Bo
+```
+
+
+
+
+```{r}
+bins = woebin(OCMR, y="Cato",method = 'tree')
+```
+```{r}
+dt_woe_list = lapply(dt_list, function(x) woebin_ply(x, bins))
+```
+
+
+
+
+```{r}
+modLog = glm(Cato ~营业利润率..._woe+销售净利率..._woe+总资产净利润率..._woe+流动比率_woe+存货周转率.次._woe+现金比率..._woe+现金比率..._woe++主营业务成本率..._woe++总资产利润率..._woe+流动资产周转率.次._woe+应收账款周转率.次._woe+总资产周转率.次._woe+资产负债率..._woe+总资产.元._woe, data=dt_woe_list$train, family="binomial")
+summary(modLog)
+
+
+```
+```{r}
+pred_list = lapply(dt_woe_list, function(x) predict(modLog, x, type='response'))
+## performance
+
+perf = perf_eva(pred = pred_list, label =label_list,show_plot =  c('ks', 'lift', 'gain', 'roc'))
+```
+`
+
+```{r}
+card = scorecard(bins, modLog, points0 = 600,odds0 = 1/19,pdo=50)
+```
+
+
+```{r}
+score_list = lapply(dt_list, function(x) scorecard_ply(x, card))
+
+head(score_list)
+```
+
+```{r}
+dt_list$train
+```
+
+```{r}
+#评分卡模型 评估公司显示
+score_train <-as.data.frame(dt_list$train)
+score_train$score<-score_list$train$score
+```
+
+
+```{r}
+#评分卡模型稳定评估
+perf_psi(score = score_list, label = label_list)
+```
+
+# Entropy Weighted
+
+
+```{r}
+#熵权法
+## 定义归一化函数
+Rescale = function(x, type=1) {
+  # type=1正向指标, type=2负向指标
+  rng = range(x, na.rm = TRUE)
+  if (type == 1) {
+    (0.996 - 0.002) * (x - rng[1]) / (rng[2] - rng[1]) + 0.002
+  } else {
+    (0.996 - 0.002) *  (rng[2] - x) / (rng[2] - rng[1]) + 0.002
+  }
+}
+```
+
+```{r}
+Entro<-Rescale(OCMR[,2:18])
+```
+
+
+```{r}
+
+Entropy_Weight = function(X, index) {
+  # 实现用熵权法计算各指标(列）的权重及各数据行的得分
+  # X为指标数据, 一行代表一个样本, 每列对应一个指标
+  # index指示向量，指示各列正向指标还是负向指标，1表示正向指标，2表示负向指标
+  # s返回各行（样本）得分，w返回各列权重
+  
+  pos = which(index == 1)
+  neg = which(index != 1)
+  
+  # 数据归一化
+  X[,pos] = lapply(X[,pos], Rescale, type=1)
+  X[,neg] = lapply(X[,neg], Rescale, type=2)
+  
+  # 计算第j个指标下，第i个样本占该指标的比重p(i,j)           
+  P = data.frame(lapply(X, function(x) x / sum(x)))
+  
+  # 计算第j个指标的熵值e(j)
+  e = sapply(P, function(x) sum(x * log(x)) *(-1/log(nrow(P))))
+  
+  d = 1 - e         # 计算信息熵冗余度
+  w = d / sum(d)   # 计算权重向量
+  
+  # 计算样本得分
+  s = as.vector(100 * as.matrix(X) %*% w)
+  
+  list(w=w, s=s)
+}
+```
+
+```{r}
+summary(Entro)
+```
+
+
+```{r}
+
+#熵权法
+X= OCMR[,2:18]
+ind = c(1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1)
+
+After_weight<-Entropy_Weight(X, ind)
+```
+```{r}
+After_weight$w
+```
+
+
+```{r}
+#测试评分卡模型
+#评分卡测试集 <- read.csv("/Users/yizhenglu/Downloads/OCMR论文/评分卡测试集.csv")
+#dt_woe_list = lapply(评分卡测试集, function(x) woebin_ply(x, bins))
+#pred_list = lapply(dt_woe_list, function(x) predict(modLog, x, type='response'))
+#perf = perf_eva(pred = pred_list, label =label_list,show_plot =  c('ks', 'lift', 'gain', 'roc'))
+
+```
+
+
+```{r}
+#card = scorecard(bins, modLog, points0 = 600,odds0 = 1/19,pdo=50)
+
+
+
+
+#测试集评分 = lapply(测试集, function(x) scorecard_ply(x, card))
+
+#head(score_list)
+
+
+```
+
+
+```{r}
+#熵权法测试
+#熵权法测试集 <- read.csv("/Users/yizhenglu/Downloads/OCMR论文/熵权法测试集.csv")
+#X= 熵权法测试集[,2:18]
+#ind = c(1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1)
+
+#After_weight<-Entropy_Weight(X, ind)
+
+#After_weight$w
+```
+

@@ -1,0 +1,357 @@
+---
+title: "OCMR"
+author: "YZL"
+date: "2/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(tidyquant)
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(car)
+library(lubridate)
+library(stargazer)
+library(tseries)
+library(xts)
+library(caret)
+library(e1071)
+library(ROSE)
+library(DMwR)
+library(VIM)
+library(mice)
+library(showtext)
+```
+
+
+
+```{r}
+#读取数据
+Acct <- read.csv("/Users/yizhenglu/Downloads/OCMR/Acct.csv")
+```
+```{r}
+#数据清理
+Acct_keep_DB <- Acct%>%
+  filter(公司=="德邦物流")
+
+Acct_keep_SF<-Acct%>%
+  filter(公司== "顺丰控股")
+
+Acct_SF_DB<- rbind(Acct_keep_SF,Acct_keep_DB
+                   )
+
+  
+```
+
+```{r}
+Acct<-Acct%>%
+  filter(公司!= "德邦物流")
+
+Acct<-Acct%>%
+  filter(公司!="顺丰控股")
+```
+
+```{r}
+md.pattern(Acct)
+```
+```{r}
+Acct_last6 <-Acct[,67:70]
+```
+
+
+```{r}
+Acct_last6["Company_year"] <- 2021 -Acct_last6['年份']
+Acct_last6 <-select(Acct_last6,-c(3))
+
+```
+
+```{r}
+Acct_last6["Reg_Capital"] =Acct_last6["Reg_Year"]*10000
+```
+```{r}
+colnames(Acct_last6)
+```
+
+
+```{r}
+#回归模型
+PairWiseDeleted = Acct_last6[complete.cases(Acct_last6[,c("员工人数","Company_year","Reg_Capital")]),]
+
+lm(员工人数~Company_year+Reg_Capital, 
+   data = PairWiseDeleted)
+
+```
+
+
+
+```{r}
+##Calculate pooled estimate of regression AdultCount and AverageRoseWidth using Multiple imputation
+ImputedGM = mice(Acct_last6,m=5,printFlag=FALSE) #Make 5 imputed data sets (Step 1)
+stripplot(ImputedGM) #Plot the imputed data sets
+
+```
+
+```{r}
+#Estimate on each imputed data set (Step 2): 
+imputedRegression = with(ImputedGM, lm(员工人数~Company_year+Reg_Capital))
+imputedRegression$analyses #Show regressions
+```
+
+```{r}
+#Pool estimates (Step 3):
+pooledRegression = pool(imputedRegression)
+pooledRegression$pooled$estimate #Show pooled estimate of regression model
+```
+```{r}
+full_data <- complete(ImputedGM,5) 
+```
+
+```{r}
+Full_V1 <- cbind(Acct,full_data)
+
+```
+
+```{r}
+       # Define vector of duplicate cols (don't change)
+       duplicates <- c(67,68,69,70)
+
+        Full_V1 <- Full_V1[,-duplicates]
+```
+
+
+
+
+```{r}
+#write_csv(Full_V1,"Full_V1.csv") 
+```
+```{r}
+V1 <- read.csv("/Users/yizhenglu/Downloads/OCMR论文/Full_V1.csv")
+```
+
+
+
+
+
+
+
+```{r}
+V1<-V1 %>% select_all(funs(gsub(" ", "(%)", .)))
+V1<-V1 %>% select_all(funs(gsub(" ", "...", .)))
+V1<-V1 %>% select_all(funs(gsub(" ", ".次.", .)))
+```
+
+
+
+```{r}
+#选择变量，后期自动化需要重新写
+V2<-V1%>%
+  select("公司","营业利润率...","销售净利率...","总资产净利润率...","流动比率","存货周转率.次.","现金比率...","成本费用利润率...","主营业务成本率...","总资产利润率...","流动资产周转率.次.","应收账款周转率.次.","总资产周转率.次.","存货周转率.次.","资产负债率...","员工人数","总资产.元.","Cato","Company_year","Reg_Capital")
+```
+
+
+
+
+```{r}
+#缺失值可视化
+MP_plot_egdata <- aggr(V2, col=c('red','blue'),
+                       numbers=TRUE, sortVars=TRUE,
+                       labels=names(V2), cex.axis=.7,
+                       gap=3, ylab=c("Proportion of Missing Data","Pattern"))
+```
+
+```{r}
+md.pattern(V2)
+```
+```{r}
+V2_2<- V2[,-c(1,17)]
+```
+
+```{r}
+ImputedGM2 = mice(V2_2,m=5,maxit=100,method='cart',seed =100) #Make 5 imputed data sets (Step 1)
+stripplot(ImputedGM2) #Plot the imputed data sets
+```
+```{r}
+summary(V2_2)
+```
+
+```{r}
+imputedRegression = with(ImputedGM2, lm(营业利润率...~员工人数+Reg_Capital+成本费用利润率...+主营业务成本率... +销售净利率...+总资产净利润率...+总资产利润率...))
+imputedRegression$analyses #Show regressions
+```
+
+```{r}
+#Pool estimates (Step 3):
+pooledRegression = pool(imputedRegression)
+pooledRegression$pooled$estimate #Show pooled estimate of regression model
+
+```
+```{r}
+full_data2 <- complete(ImputedGM2,3) 
+
+```
+
+```{r}
+#KNN 填充
+Knn_data <-knnImputation((V2_2))
+```
+
+```{r}
+#Knn_full<- cbind(V2,Knn_data)
+```
+```{r}
+Knn_full<-cbind(V2[17],Knn_data)
+
+```
+```{r}
+Knn_full$Cato<- as.factor(Knn_full$Cato)
+```
+
+```{r}
+write_csv(Knn_full,"Knn_full.csv")
+```
+
+```{r}
+#训练集及测试集
+set.seed(1)
+Knn_train_set = createDataPartition(Knn_full$Cato, p = 0.75, list = FALSE)
+KNN_train = Knn_full[Knn_train_set,]
+KNN_test = Knn_full[-Knn_train_set,]
+
+```
+
+
+```{r}
+#启动CV
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+set.seed(1)
+SVM_Knn_data<- train(Cato	~., data = KNN_train, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+
+```{r}
+#预测以及 混淆矩阵
+SVM_testR =SVM_Knn_data%>%
+  predict(KNN_test)
+confusionMatrix(as.factor(SVM_testR),as.factor(KNN_test$Cato))
+```
+
+
+
+
+
+
+
+
+```{r}
+#Normalization
+min_max_norm <- function(x) {
+    (x - min(x)) / (max(x) - min(x))
+}
+Norm_full <- as.data.frame(lapply(Knn_full[,2:18], min_max_norm))
+
+```
+```{r}
+Norm_full$Cato<- Knn_full$Cato
+```
+```{r}
+Norm_full$Cato<- as.factor(Norm_full$Cato)
+```
+
+```{r}
+write.csv(Norm_full,"Norm_full.csv")
+```
+
+
+
+
+```{r}
+#训练集 测试集
+set.seed(1)
+AAPL_train_set = createDataPartition(Norm_full$Cato, p = 0.75, list = FALSE)
+AAPL_train = Norm_full[AAPL_train_set,]
+AAPL_test = Norm_full[-AAPL_train_set,]
+```
+
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+set.seed(33)
+SVM_cv<- train(Cato	~., data = AAPL_train, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+#AAPL SVM
+```{r}
+#ROC 模型评估
+AAPL_test_SVM =SVM_cv%>%
+  predict(AAPL_test)
+#Evaluate predictions
+library(pROC) #For building ROC curve
+AAPL_test$Cato<-as.character(AAPL_test$Cato)
+ValidRoc = roc(as.numeric(AAPL_test$Cato),as.numeric(AAPL_test_SVM))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+
+
+
+
+```{r}
+#混淆矩阵
+
+confusionMatrix(as.factor(AAPL_test_SVM),as.factor(AAPL_test$Cato))
+
+```
+```{r}
+font_files()
+showtext_auto(enable = TRUE)
+font_add('Alibaba-PuHuiTi-Regular', 'Alibaba-PuHuiTi-Regular.ttf')
+```
+
+```{r}
+#变量选择
+plot(varImp(SVM_cv))
+```
+
+```{r}
+set.seed(123)
+Boruta_Var <- Boruta(Cato ~ ., data = Norm_full, doTrace = 2, ntree = 500)
+```
+
+
+```{r}
+attStats(Boruta_Var)
+```
+
+
+
+```{r}
+#以下代码为使用新的测试集测试模型效果
+# 测试集 <- read.csv("/Users/yizhenglu/Downloads/OCMR/测试集.csv")
+# Norm_full <-as.data.frame(lapply(测试集[,2:18]，min_max_norm))
+#Norm_full$Cato<-测试集$Cato
+#Norm_full$Cato<-as.factor(Norm_full$Cato)
+```
+
+```{r}
+#预测新的测试集
+#SVM_testR =SVM_Knn_data%>%
+# predict(测试集)
+#confusionMatrix(as.factor(SVM_testR),as.factor(测试集$Cato)
+```
+
+
