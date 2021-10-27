@@ -1,0 +1,608 @@
+---
+title: "467_CLEAN"
+author: "YZL"
+date: "9/19/2020"
+output: html_document
+---
+
+```{r}
+library(foreign)
+library(dplyr)
+library(readr)
+```
+
+```{r}
+crime_2014 <- read_csv("/Users/yizhenglu/Downloads/467论文/Crime/2014_crime.csv")
+
+crime_2013 <- read_csv("/Users/yizhenglu/Downloads/467论文/Crime/2013_crime.csv")
+crime_2012 <- read_csv("/Users/yizhenglu/Downloads/467论文/Crime/2012_crime.csv")
+crime_2011 <- read_csv("/Users/yizhenglu/Downloads/467论文/Crime/2011_crime.csv")
+crime_2010 <- read_csv("/Users/yizhenglu/Downloads/467论文/Crime/2010_crime.csv")
+```
+```{r}
+crime_2014$Year="2014"
+crime_2013$Year="2013"
+crime_2012$Year="2012"
+crime_2011$Year="2011"
+crime_2010$Year="2010"
+```
+
+```{r}
+crime_five = do.call("rbind", list(crime_2014,crime_2013,crime_2012,crime_2010, crime_2011))
+```
+
+```{r}
+crime_five<-select(crime_five,-c(6,16))
+write.csv(crime_five,"complete_crime.csv")
+```
+
+```{r}
+gini_2014 <- read_csv("/Users/yizhenglu/Downloads/467论文/Gini/2014_Gini.csv")
+gini_2014 = gini_2014[-1,]
+gini_2014<-select(gini_2014,-c(1,4))
+
+
+names(gini_2014)[names(gini_2014) == "B19083_001E"] <- "Gini"
+
+gini_2014$Year="2014"
+```
+```{r}
+gini_2013 <- read_csv("/Users/yizhenglu/Downloads/467论文/Gini/2013_Gini.csv")
+gini_2013 = gini_2013[-1,]
+gini_2013<-select(gini_2013,-c(1,4))
+
+
+names(gini_2013)[names(gini_2013) == "B19083_001E"] <- "Gini"
+
+gini_2013$Year="2013"
+```
+
+```{r}
+gini_2012 <- read_csv("/Users/yizhenglu/Downloads/467论文/Gini/2012_Gini.csv")
+gini_2012 = gini_2012[-1,]
+gini_2012<-select(gini_2012,-c(1,4))
+
+
+names(gini_2012)[names(gini_2012) == "B19083_001E"] <- "Gini"
+
+gini_2012$Year="2012"
+```
+
+```{r}
+gini_2011 <- read_csv("/Users/yizhenglu/Downloads/467论文/Gini/2011_Gini.csv")
+gini_2011 = gini_2011[-1,]
+gini_2011<-select(gini_2011,-c(1,4))
+
+
+names(gini_2011)[names(gini_2011) == "B19083_001E"] <- "Gini"
+
+gini_2011$Year="2011"
+```
+
+```{r}
+gini_2010 <- read_csv("/Users/yizhenglu/Downloads/467论文/Gini/2010_Gini.csv")
+gini_2010 = gini_2010[-1,]
+gini_2010<-select(gini_2010,-c(1,4))
+
+
+names(gini_2010)[names(gini_2010) == "B19083_001E"] <- "Gini"
+
+gini_2010$Year="2010"
+```
+```{r}
+gini_five = do.call("rbind", list(gini_2010,gini_2011,gini_2012,gini_2013, gini_2014))
+```
+```{r}
+gini_five<-subset(gini_five, NAME!="Puerto Rico")
+gini_five<-gini_five%>%
+  rename(State="NAME")
+```
+
+```{r}
+gini_crime<-merge(gini_five,crime_five,by=c("State","Year"))
+```
+
+```{r}
+Edu_2010 <- read_csv("/Users/yizhenglu/Downloads/467论文/Edu/2010_Edu.csv")
+Edu_2010 <-Edu_2010[,names(Edu_2010) %in% colnames(Edu_2010)[!grepl("Margin",colnames(Edu_2010))]]
+```
+
+
+
+```{r}
+Edu_2010$Total_pop_over16 = Edu_2010$`Total!!Estimate!!Population 16 years and over`
+Edu_2010$Pop_Age_under24 = Edu_2010$`Total!!Estimate!!AGE!!20 to 24 years`+Edu_2010$`Total!!Estimate!!AGE!!16 to 19 years`
+Edu_2010$Pop_Age_25to54 = Edu_2010$`Total!!Estimate!!AGE!!25 to 44 years`+Edu_2010$`Total!!Estimate!!AGE!!45 to 54 years`
+Edu_2010$Pop_Age_55to = Edu_2010$`Total!!Estimate!!AGE!!55 to 64 years`+Edu_2010$`Total!!Estimate!!AGE!!65 to 74 years`+Edu_2010$`Total!!Estimate!!AGE!!75 years and over`
+Edu_2010$Pop_White =Edu_2010$`Total!!Estimate!!RACE AND HISPANIC OR LATINO ORIGIN!!One race!!White`
+Edu_2010$Pop_Black =Edu_2010$`Total!!Estimate!!RACE AND HISPANIC OR LATINO ORIGIN!!One race!!Black or African American`
+Edu_2010$Pop_Asia = Edu_2010$`Total!!Estimate!!RACE AND HISPANIC OR LATINO ORIGIN!!One race!!Asian`
+
+```
+
+```{r}
+Edu_2010$total_past_12_below_poverty = Edu_2010$`Total!!Estimate!!POVERTY STATUS IN THE PAST 12 MONTHS!!Below poverty level`
+
+Edu_2010$Unemployment_rate_above16 = Edu_2010$`Unemployment rate!!Estimate!!Population 16 years and over`
+Edu_2010$Unemployment_rate_20_24=Edu_2010$`Unemployment rate!!Estimate!!AGE!!20 to 24 years`
+
+Edu_2010$Year ="2010"
+Edu_2010<-Edu_2010%>%
+  rename(State="Geographic Area Name")
+```
+
+
+```{r}
+myvars <- c("State","Unemployment_rate_above16","Year","Total_pop_over16","Pop_Age_under24","Unemployment_rate_20_24")
+Umemploy_2010 <- Edu_2010[myvars]
+```
+
+```{r}
+Edu_2011 <- read_csv("/Users/yizhenglu/Downloads/467论文/Edu/2011_Edu.csv")
+Edu_2011 <-Edu_2011[,names(Edu_2011) %in% colnames(Edu_2011)[!grepl("Margin",colnames(Edu_2011))]]
+Edu_2011$Unemployment_rate_above16 = Edu_2011$`Unemployment rate!!Estimate!!Population 16 years and over`
+Edu_2011$Total_pop_over16 = Edu_2011$`Total!!Estimate!!Population 16 years and over`
+Edu_2011$Pop_Age_under24 = Edu_2011$`Total!!Estimate!!AGE!!20 to 24 years`+Edu_2011$`Total!!Estimate!!AGE!!16 to 19 years`
+Edu_2011$Unemployment_rate_20_24=Edu_2011$`Unemployment rate!!Estimate!!AGE!!20 to 24 years`
+Edu_2011$Year ="2011"
+Edu_2011<-Edu_2011%>%
+  rename(State="Geographic Area Name")
+myvars <- c("State","Unemployment_rate_above16","Year","Total_pop_over16","Pop_Age_under24","Unemployment_rate_20_24")
+Umemploy_2011 <- Edu_2011[myvars]
+```
+
+
+```{r}
+Edu_2012 <- read_csv("/Users/yizhenglu/Downloads/467论文/Edu/2012_Edu.csv")
+Edu_2012 <-Edu_2012[,names(Edu_2012) %in% colnames(Edu_2012)[!grepl("Margin",colnames(Edu_2012))]]
+Edu_2012$Unemployment_rate_above16 = Edu_2012$`Unemployment rate!!Estimate!!Population 16 years and over`
+Edu_2012$Total_pop_over16 = Edu_2012$`Total!!Estimate!!Population 16 years and over`
+Edu_2012$Pop_Age_under24 = Edu_2012$`Total!!Estimate!!AGE!!20 to 24 years`+Edu_2012$`Total!!Estimate!!AGE!!16 to 19 years`
+
+Edu_2012$Unemployment_rate_20_24=Edu_2012$`Unemployment rate!!Estimate!!AGE!!20 to 24 years`
+Edu_2012$Year ="2012"
+Edu_2012<-Edu_2012%>%
+  rename(State="Geographic Area Name")
+myvars <- c("State","Unemployment_rate_above16","Year","Total_pop_over16","Pop_Age_under24","Unemployment_rate_20_24")
+Umemploy_2012 <- Edu_2012[myvars]
+```
+
+
+
+```{r}
+Edu_2013 <- read_csv("/Users/yizhenglu/Downloads/467论文/Edu/2013_Edu.csv")
+Edu_2013 <-Edu_2013[,names(Edu_2013) %in% colnames(Edu_2013)[!grepl("Margin",colnames(Edu_2013))]]
+Edu_2013$Unemployment_rate_above16 = Edu_2013$`Unemployment rate!!Estimate!!Population 16 years and over`
+Edu_2013$Total_pop_over16 = Edu_2013$`Total!!Estimate!!Population 16 years and over`
+Edu_2013$Pop_Age_under24 = Edu_2013$`Total!!Estimate!!AGE!!20 to 24 years`+Edu_2013$`Total!!Estimate!!AGE!!16 to 19 years`
+
+Edu_2013$Unemployment_rate_20_24=Edu_2013$`Unemployment rate!!Estimate!!AGE!!20 to 24 years`
+Edu_2013$Year ="2013"
+Edu_2013<-Edu_2013%>%
+  rename(State="Geographic Area Name")
+myvars <- c("State","Unemployment_rate_above16","Year","Total_pop_over16","Pop_Age_under24","Unemployment_rate_20_24")
+Umemploy_2013 <- Edu_2013[myvars]
+```
+
+```{r}
+Edu_2014 <- read_csv("/Users/yizhenglu/Downloads/467论文/Edu/2014_Edu.csv")
+Edu_2014 <-Edu_2014[,names(Edu_2014) %in% colnames(Edu_2014)[!grepl("Margin",colnames(Edu_2014))]]
+Edu_2014$Unemployment_rate_above16 = Edu_2014$`Unemployment rate!!Estimate!!Population 16 years and over`
+Edu_2014$Total_pop_over16 = Edu_2014$`Total!!Estimate!!Population 16 years and over`
+Edu_2014$Pop_Age_under24 = Edu_2014$`Total!!Estimate!!AGE!!20 to 24 years`+Edu_2014$`Total!!Estimate!!AGE!!16 to 19 years`
+
+Edu_2014$Unemployment_rate_20_24=Edu_2014$`Unemployment rate!!Estimate!!AGE!!20 to 24 years`
+Edu_2014$Year ="2014"
+Edu_2014<-Edu_2014%>%
+  rename(State="Geographic Area Name")
+myvars <- c("State","Unemployment_rate_above16","Year","Total_pop_over16","Pop_Age_under24","Unemployment_rate_20_24")
+Umemploy_2014 <- Edu_2014[myvars]
+
+```
+
+```{r}
+Umeploy_five = do.call("rbind", list(Umemploy_2014,Umemploy_2013,Umemploy_2012,Umemploy_2011, Umemploy_2010))
+Umeploy_five<-subset(Umeploy_five, State!="Puerto Rico")
+Umeploy_gini_crime<-merge(Umeploy_five,gini_crime,by=c("State","Year"))
+```
+
+```{r}
+write_csv(Umeploy_gini_crime,"Umeploy_gini_crime.csv")
+```
+
+
+
+
+```{r}
+Poverty_2010  <- read_csv("/Users/yizhenglu/Downloads/467论文/Poverty/Poverty_2010.csv")
+
+Poverty_2010$Year ="2010"
+Poverty_2010<-Poverty_2010%>%
+  rename(State="Geographic Area Name")
+Poverty_2010$poverty_rate_18to64 = Poverty_2010$`Percent below poverty level!!Estimate!!AGE!!18 to 64 years`
+Poverty_2010$below_pov18 = Poverty_2010$"Percent below poverty level!!Estimate!!AGE!!Under 18 years" 
+
+
+myvars <- c("State","Year","poverty_rate_18to64","below_pov18")
+pt_2010 <- Poverty_2010[myvars]
+```
+
+
+
+```{r}
+Poverty_2011  <- read_csv("/Users/yizhenglu/Downloads/467论文/Poverty/Poverty_2011.csv")
+
+Poverty_2011$Year ="2011"
+Poverty_2011<-Poverty_2011%>%
+  rename(State="Geographic Area Name")
+Poverty_2011$poverty_rate_18to64 = Poverty_2011$`Percent below poverty level!!Estimate!!AGE!!18 to 64 years`
+Poverty_2011$below_pov18 = Poverty_2011$"Percent below poverty level!!Estimate!!AGE!!Under 18 years" 
+myvars <- c("State","Year","poverty_rate_18to64","below_pov18")
+pt_2011 <- Poverty_2011[myvars]
+```
+
+```{r}
+Poverty_2012  <- read_csv("/Users/yizhenglu/Downloads/467论文/Poverty/Poverty_2012.csv")
+
+Poverty_2012$Year ="2012"
+Poverty_2012<-Poverty_2012%>%
+  rename(State="Geographic Area Name")
+Poverty_2012$poverty_rate_18to64 = Poverty_2012$`Percent below poverty level!!Estimate!!AGE!!18 to 64 years`
+Poverty_2012$below_pov18 = Poverty_2012$"Percent below poverty level!!Estimate!!AGE!!Under 18 years" 
+
+myvars <- c("State","Year","poverty_rate_18to64","below_pov18")
+pt_2012 <- Poverty_2012[myvars]
+```
+
+```{r}
+Poverty_2013  <- read_csv("/Users/yizhenglu/Downloads/467论文/Poverty/Poverty_2013.csv")
+
+Poverty_2013$Year ="2013"
+Poverty_2013<-Poverty_2013%>%
+  rename(State="Geographic Area Name")
+Poverty_2013$poverty_rate_18to64 = Poverty_2013$`Percent below poverty level!!Estimate!!AGE!!18 to 64 years`
+Poverty_2013$below_pov18 = Poverty_2013$"Percent below poverty level!!Estimate!!AGE!!Under 18 years" 
+
+myvars <- c("State","Year","poverty_rate_18to64","below_pov18")
+pt_2013 <- Poverty_2013[myvars]
+```
+
+```{r}
+Poverty_2014  <- read_csv("/Users/yizhenglu/Downloads/467论文/Poverty/Poverty_2014.csv")
+
+Poverty_2014$Year ="2014"
+Poverty_2014<-Poverty_2014%>%
+  rename(State="Geographic Area Name")
+Poverty_2014$poverty_rate_18to64 = Poverty_2014$`Percent below poverty level!!Estimate!!AGE!!18 to 64 years`
+
+Poverty_2014$below_pov18 = Poverty_2014$"Percent below poverty level!!Estimate!!AGE!!Under 18 years" 
+myvars <- c("State","Year","poverty_rate_18to64","below_pov18")
+pt_2014 <- Poverty_2014[myvars]
+```
+
+
+```{r}
+pt_five = do.call("rbind", list(pt_2014,pt_2013,pt_2012,pt_2011, pt_2010))
+pt_five<-subset(pt_five, State!="Puerto Rico")
+Umeploy_gini_crime_pt<-merge(pt_five,Umeploy_gini_crime,by=c("State","Year"))
+```
+
+
+```{r}
+ET_2010  <- read_csv("/Users/yizhenglu/Downloads/467论文/ET/ET_2010.csv")
+
+ET_2010$Year ="2010"
+ET_2010<-ET_2010%>%
+  rename(State="Geographic Area Name")
+
+ET_2010$LTHS_25over = ET_2010$"Total!!Estimate!!9th to 12th grade, no diploma"
+
+ET_2010$High_ed25over =  ET_2010$"Total!!Estimate!!Bachelor's degree"+ET_2010$"Total!!Estimate!!Graduate or professional degree"                                                                                        
+myvars <- c("State","Year","High_ed25over","LTHS_25over")
+ET_2010_new<- ET_2010[myvars]
+```
+```{r}
+ET_2011  <- read_csv("/Users/yizhenglu/Downloads/467论文/ET/ET_2011.csv")
+
+ET_2011$Year ="2011"
+ET_2011<-ET_2011%>%
+  rename(State="Geographic Area Name")
+
+ET_2011$LTHS_25over =   ET_2011$"Total!!Estimate!!9th to 12th grade, no diploma"
+
+ET_2011$High_ed25over =  ET_2011$"Total!!Estimate!!Bachelor's degree"+ET_2011$"Total!!Estimate!!Graduate or professional degree"                                                                                        
+myvars <- c("State","Year","High_ed25over","LTHS_25over")
+ET_2011_new<- ET_2011[myvars]
+```
+
+```{r}
+ET_2012  <- read_csv("/Users/yizhenglu/Downloads/467论文/ET/ET_2012.csv")
+
+ET_2012$Year ="2012"
+ET_2012<-ET_2012%>%
+  rename(State="Geographic Area Name")
+
+ET_2012$LTHS_25over = ET_2012$"Total!!Estimate!!9th to 12th grade, no diploma"
+
+ET_2012$High_ed25over =  ET_2012$"Total!!Estimate!!Bachelor's degree"+ET_2012$"Total!!Estimate!!Graduate or professional degree"                                                                                        
+myvars <- c("State","Year","High_ed25over","LTHS_25over")
+ET_2012_new<- ET_2012[myvars]
+```
+
+```{r}
+ET_2013  <- read_csv("/Users/yizhenglu/Downloads/467论文/ET/ET_2013.csv")
+
+ET_2013$Year ="2013"
+ET_2013<-ET_2013%>%
+  rename(State="Geographic Area Name")
+
+ET_2013$LTHS_25over = ET_2013$"Total!!Estimate!!Population 25 years and over!!9th to 12th grade, no diploma"
+ET_2013$High_ed25over =  ET_2013$"Total!!Estimate!!Population 25 years and over!!Bachelor's degree"+ET_2013$"Total!!Estimate!!Population 25 years and over!!Graduate or professional degree"                                                                                        
+myvars <- c("State","Year","High_ed25over","LTHS_25over")
+ET_2013_new<- ET_2013[myvars]
+```
+
+```{r}
+ET_2014  <- read_csv("/Users/yizhenglu/Downloads/467论文/ET/ET_2014.csv")
+
+ET_2014$Year ="2014"
+ET_2014<-ET_2014%>%
+  rename(State="Geographic Area Name")
+
+ET_2014$LTHS_25over =  ET_2014$"Total!!Estimate!!Population 25 years and over!!9th to 12th grade, no diploma" 
+ET_2014$High_ed25over =  ET_2014$"Total!!Estimate!!Population 25 years and over!!Bachelor's degree"+ET_2014$"Total!!Estimate!!Population 25 years and over!!Graduate or professional degree"                                                                                        
+myvars <- c("State","Year","High_ed25over","LTHS_25over")
+ET_2014_new<- ET_2014[myvars]
+```
+
+```{r}
+Et_five = do.call("rbind", list(ET_2014_new,ET_2013_new,ET_2012_new,ET_2011_new, ET_2010_new))
+Et_five<-subset(Et_five, State!="Puerto Rico")
+Et_Umeploy_gini_crime_pt<-merge(Et_five,Umeploy_gini_crime_pt,by=c("State","Year"))
+```
+
+
+
+```{r}
+income_2010  <- read_csv("/Users/yizhenglu/Downloads/467论文/income/income_2010.csv")
+
+income_2010$Year ="2010"
+
+income_2010<-income_2010%>%
+  rename(State="Geographic Area Name")
+income_2010$family_mean_income = income_2010$`Families!!Estimate!!Mean income (dollars)`
+income_2010$non_family_mean_income = income_2010$"Nonfamily households!!Estimate!!Mean income (dollars)"
+                                                                                     
+myvars <- c("State","Year","non_family_mean_income","family_mean_income")
+income_2010_new<- income_2010[myvars]
+```
+
+```{r}
+income_2011  <- read_csv("/Users/yizhenglu/Downloads/467论文/income/income_2011.csv")
+
+income_2011$Year ="2011"
+
+income_2011<-income_2011%>%
+  rename(State="Geographic Area Name")
+income_2011$family_mean_income = income_2011$`Families!!Estimate!!Mean income (dollars)`
+income_2011$non_family_mean_income = income_2011$"Nonfamily households!!Estimate!!Mean income (dollars)"
+                                                                                     
+myvars <- c("State","Year","non_family_mean_income","family_mean_income")
+income_2011_new<- income_2011[myvars]
+```
+
+```{r}
+income_2012  <- read_csv("/Users/yizhenglu/Downloads/467论文/income/income_2012.csv")
+
+income_2012$Year ="2012"
+
+income_2012<-income_2012%>%
+  rename(State="Geographic Area Name")
+income_2012$family_mean_income = income_2012$`Families!!Estimate!!Mean income (dollars)`
+income_2012$non_family_mean_income = income_2012$"Nonfamily households!!Estimate!!Mean income (dollars)"
+                                                                                     
+myvars <- c("State","Year","non_family_mean_income","family_mean_income")
+income_2012_new<- income_2012[myvars]
+```
+
+```{r}
+income_2013  <- read_csv("/Users/yizhenglu/Downloads/467论文/income/income_2013.csv")
+
+income_2013$Year ="2013"
+
+income_2013<-income_2013%>%
+  rename(State="Geographic Area Name")
+income_2013$family_mean_income = income_2013$`Families!!Estimate!!Mean income (dollars)`
+income_2013$non_family_mean_income = income_2013$"Nonfamily households!!Estimate!!Mean income (dollars)"
+                                                                                     
+myvars <- c("State","Year","non_family_mean_income","family_mean_income")
+income_2013_new<- income_2013[myvars]
+```
+
+```{r}
+income_2014  <- read_csv("/Users/yizhenglu/Downloads/467论文/income/income_2014.csv")
+
+income_2014$Year ="2014"
+
+income_2014<-income_2014%>%
+  rename(State="Geographic Area Name")
+income_2014$family_mean_income = income_2014$`Families!!Estimate!!Mean income (dollars)`
+income_2014$non_family_mean_income = income_2014$"Nonfamily households!!Estimate!!Mean income (dollars)"
+                                                                                     
+myvars <- c("State","Year","non_family_mean_income","family_mean_income")
+income_2014_new<- income_2014[myvars]
+```
+
+```{r}
+Income_five = do.call("rbind", list(income_2014_new,income_2013_new,income_2012_new,income_2011_new, income_2010_new))
+Income_five<-subset(Income_five, State!="Puerto Rico")
+Et_Umeploy_gini_crime_pt_income<-merge(Income_five,Et_Umeploy_gini_crime_pt,by=c("State","Year"))
+```
+
+
+```{r}
+library("readxl")
+Table77_2010  <- read_excel("/Users/yizhenglu/Downloads/467论文/Police/2010_Table77.xls")
+Table77_2010$Population <-crime_2010$Population
+Table77_2010$Law_enforcement_ratio <- Table77_2010$`Total law enforcement employees`/Table77_2010$Population
+Table77_2010$Law_enforcement_10000 <- (Table77_2010$`Total law enforcement employees`/Table77_2010$Population)*10000
+Table77_2010$Year =2010
+myvars <- c("State","Year","Law_enforcement_ratio","Law_enforcement_10000")
+Table77_2010_new<- Table77_2010[myvars]
+```
+
+```{r}
+Table77_2011  <- read_excel("/Users/yizhenglu/Downloads/467论文/Police/2011_Table77.xls")
+Table77_2011$Population <-crime_2011$Population
+Table77_2011$Law_enforcement_ratio <- Table77_2011$`Total law enforcement employees`/Table77_2011$Population
+Table77_2011$Law_enforcement_10000 <- (Table77_2011$`Total law enforcement employees`/Table77_2011$Population)*10000
+Table77_2011$Year = 2011
+myvars <- c("State","Year","Law_enforcement_ratio","Law_enforcement_10000")
+Table77_2011_new<- Table77_2011[myvars]
+```
+
+
+```{r}
+Table77_2012  <- read_excel("/Users/yizhenglu/Downloads/467论文/Police/2012_Table77.xls")
+Table77_2012$Population <-crime_2012$Population
+Table77_2012$Law_enforcement_ratio <- Table77_2012$`Total law enforcement employees`/Table77_2012$Population
+Table77_2012$Law_enforcement_10000 <- (Table77_2012$`Total law enforcement employees`/Table77_2012$Population)*10000
+Table77_2012$Year =2012
+myvars <- c("State","Year","Law_enforcement_ratio","Law_enforcement_10000")
+Table77_2012_new<- Table77_2012[myvars]
+```
+
+```{r}
+Table77_2013 <- read_excel("/Users/yizhenglu/Downloads/467论文/Police/2013_Table77.xls")
+Table77_2013$Population <-crime_2013$Population
+Table77_2013$Law_enforcement_ratio <- Table77_2013$`Total law enforcement employees`/Table77_2013$Population
+Table77_2013$Law_enforcement_10000 <- (Table77_2013$`Total law enforcement employees`/Table77_2013$Population)*10000
+Table77_2013$Year = 2013
+myvars <- c("State","Year","Law_enforcement_ratio","Law_enforcement_10000")
+Table77_2013_new<- Table77_2013[myvars]
+```
+
+
+
+```{r}
+Table77_2014  <- read_excel("/Users/yizhenglu/Downloads/467论文/Police/2014_Table77.xls")
+#West virginia data is missing in this. the mean will be 4451
+library(tidyverse)
+Table77_2014$Population <-crime_2014$Population
+Table77_2014$Law_enforcement_ratio <- Table77_2014$`Total law enforcement employees`/Table77_2014$Population
+Table77_2014$Law_enforcement_10000 <- (Table77_2014$`Total law enforcement employees`/Table77_2014$Population)*10000
+Table77_2014$Year =2014
+myvars <- c("State","Year","Law_enforcement_ratio","Law_enforcement_10000")
+Table77_2014_new<- Table77_2014[myvars]
+```
+
+```{r}
+Police_five = do.call("rbind", list(Table77_2014_new,Table77_2013_new,Table77_2012_new,Table77_2011_new, Table77_2010_new))
+```
+
+```{r}
+Et_Umeploy_gini_crime_pt_income$State = toupper(Et_Umeploy_gini_crime_pt_income$State)
+
+Et_Umeploy_gini_crime_pt_income_police<-merge(Police_five,Et_Umeploy_gini_crime_pt_income,by=c("State","Year"))
+```
+
+
+
+
+
+```{r}
+Race_2010<- read_csv("/Users/yizhenglu/Downloads/467论文/Race/Race_2010.csv")
+Race_2010<-na.omit(Race_2010)
+Race_2010$Year <- 2010
+myvars <- c("State","Year","White alone","Black or African American alone","Asian alone")
+Race_2010_new<- Race_2010[myvars]
+```
+
+```{r}
+Race_2011<- read_csv("/Users/yizhenglu/Downloads/467论文/Race/Race_2011.csv")
+Race_2011<-na.omit(Race_2011)
+Race_2011$Year <- 2011
+myvars <- c("State","Year","White alone","Black or African American alone","Asian alone")
+Race_2011_new<- Race_2011[myvars]
+```
+
+```{r}
+Race_2012<- read_csv("/Users/yizhenglu/Downloads/467论文/Race/Race_2012.csv")
+Race_2012<-na.omit(Race_2012)
+Race_2012$Year <- 2012
+myvars <- c("State","Year","White alone","Black or African American alone","Asian alone")
+Race_2012_new<- Race_2012[myvars]
+```
+
+```{r}
+Race_2013<- read_csv("/Users/yizhenglu/Downloads/467论文/Race/Race_2013.csv")
+Race_2013<-na.omit(Race_2013)
+Race_2013$Year <- 2013
+myvars <- c("State","Year","White alone","Black or African American alone","Asian alone")
+Race_2013_new<- Race_2013[myvars]
+```
+
+```{r}
+Race_2014<- read_csv("/Users/yizhenglu/Downloads/467论文/Race/Race_2014.csv")
+Race_2014<-na.omit(Race_2014)
+Race_2014$Year <- 2014
+myvars <- c("State","Year","White alone","Black or African American alone","Asian alone")
+Race_2014_new<- Race_2014[myvars]
+```
+```{r}
+Land_size  <- read_csv("/Users/yizhenglu/Downloads/467论文/Police/Land_state.csv")
+Land_size$State = toupper(Land_size$State)
+Et_Umeploy_gini_crime_pt_income_police_landsize<-merge(Land_size,Et_Umeploy_gini_crime_pt_income_police,by=c("State"))
+```
+
+```{r}
+# CT(2012), MARYLAND(2013), abolish the capital penality
+#This part will be done in Stata
+Death  <- read_csv("/Users/yizhenglu/Downloads/467论文/Police/Death_pen.csv")
+Death$State = toupper(Death$State)
+Et_Umeploy_gini_crime_pt_income_police_landsize_death<-merge(Death,Et_Umeploy_gini_crime_pt_income_police_landsize,by=c("State"))
+```
+
+
+```{r}
+Race_five = do.call("rbind", list(Race_2014_new,Race_2013_new,Race_2012_new,Race_2011_new, Race_2010_new))
+
+
+Complete_data<-merge(Race_five,Et_Umeploy_gini_crime_pt_income_police_landsize_death,by=c("State","Year"))
+```
+
+```{r}
+colnames(Complete_data)
+```
+```{r}
+#Remove columnnames contain "_"
+
+
+
+Complete_data<-Complete_data %>% select_all(funs(gsub(" ", "_", .)))
+
+
+```
+
+```{r}
+Complete_data<-select(Complete_data,-c(25,30,34,39))
+```
+```{r}
+colnames(Complete_data)
+```
+
+Complete_data$Death_Penality = Complete_data$`Death Penality`
+Complete_data$White_alone = Complete_data$`White alone`
+Complete_data$Asian_alone = Complete_data$`Asian alone`
+Complete_data$Black_alone = Complete_data$`Black or African American alone`
+
+
+
+
+
+
+
+```{r}
+write.dta(Complete_data, "Crime.dta")
+```
+
