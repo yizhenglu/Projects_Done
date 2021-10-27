@@ -1,0 +1,876 @@
+---
+title: "401_part2"
+author: "YZL"
+date: "10/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyquant)
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(car)
+library(lubridate)
+library(stargazer)
+library(tseries)
+library(xts)
+library(caret)
+library(e1071)
+library(ROSE)
+library(DMwR)
+```
+```{r}
+Predictions_data <- read.csv("/Users/yizhenglu/Downloads/Stock essay/Predictions data.csv")
+```
+
+
+
+```{r}
+Predictions_data<-Predictions_data%>%
+  select(-c(3,9,11))
+```
+
+
+  
+```{r}
+#Predictions_data$Date<-as.Date(Predictions_data$Date,"%y/%m/%d")
+```
+
+```{r}
+#The previous Rmd file, I defined the predictor. Thrrough, Close price - mince Prevous Close Price.
+#In this section, I will change the "Price_change" to Up or down.
+#PriceChange	<- ifelse(PriceChange	> 0,	"UP",	"DOWN")
+
+Predictions_data$Class	<- ifelse(Predictions_data$PriceChange	>= 0,	"1",	"0")
+```
+
+
+
+
+
+```{r}
+AAPL<- Predictions_data%>%
+  filter(Ticker =="AAPL")
+
+AAPL<-AAPL%>%
+    select(Class,	RSI_Close,EMAcross_Close,	MACDsignal,	SMI,	stochWPR,	ADX,	CCI,	CMO,	ROC,obv,Date)
+#AAPL$Date<-as.Date(AAPL$Date,"%y/%m/%d")
+
+#AAPL$Date <-as.POSIXlt(AAPL$Date,
+#                         format="%y/%m/%d")
+
+#Close <-xts(AAPL[,6],order.by=AAPL$Date)
+
+#plot(Close)
+```
+
+
+
+```{r}
+set.seed(1)
+AAPL_train_set = createDataPartition(AAPL$Class, p = 0.75, list = FALSE)
+AAPL_train = AAPL[AAPL_train_set,]
+AAPL_test = AAPL[-AAPL_train_set,]
+
+```
+
+
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+SVM_cv<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = AAPL_train, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+#AAPL SVM
+```{r}
+AAPL_test_SVM =SVM_cv%>%
+  predict(AAPL_test)
+#Evaluate predictions
+library(pROC) #For building ROC curve
+AAPL_test$Class<-as.character(AAPL_test$Class)
+ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_SVM))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+```{r}
+confusionMatrix(as.factor(AAPL_test_SVM),as.factor(AAPL_test$Class))
+```
+#AMZN SVM
+```{r}
+AMZN<- Predictions_data%>%
+  filter(Ticker =="AMZN")
+
+AMZN<-AMZN%>%
+    select(Class,	RSI_Close,EMAcross_Close,	MACDsignal,	SMI,	stochWPR,	ADX,	CCI,	CMO,	ROC,obv,Date)
+```
+
+
+```{r}
+set.seed(1)
+AMZN_train_set = createDataPartition(AMZN$Class, p = 0.75, list = FALSE)
+AMZN_train = AMZN[AMZN_train_set,]
+AMZN_test = AMZN[-AMZN_train_set,]
+
+```
+
+
+
+
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+set.seed(1)
+Amazon_SVM_cv<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = AMZN_train, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+```{r}
+Amazon_test_SVM =Amazon_SVM_cv%>%
+  predict(AMZN_test)
+confusionMatrix(as.factor(Amazon_test_SVM),as.factor(AMZN_test$Class))
+```
+
+
+
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(Amazon_test_SVM))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+
+
+```{r}
+SBUX<- Predictions_data%>%
+  filter(Ticker =="SBUX")
+
+SBUX<-SBUX%>%
+    select(Class,	RSI_Close,EMAcross_Close,	MACDsignal,	SMI,	stochWPR,	ADX,	CCI,	CMO,	ROC,obv,Date)
+```
+
+
+```{r}
+set.seed(1)
+SBUX_train_set = createDataPartition(SBUX$Class, p = 0.75, list = FALSE)
+SBUX_train = SBUX[SBUX_train_set,]
+SBUX_test = SBUX[-SBUX_train_set,]
+
+```
+
+
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+set.seed(1)
+SBUX_SVM_cv<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = SBUX_train, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+#SBUX SVM
+```{r}
+SBUX_test_SVM =SBUX_SVM_cv%>%
+  predict(SBUX_test)
+confusionMatrix(as.factor(SBUX_test_SVM),as.factor(SBUX_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_SVM))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+```{r}
+xgbgrid <- expand.grid(nrounds = 100,#程序运行次数
+                       max_depth = 10,#树的深度
+                       eta = 0.05,
+                       gamma = 0.01,
+                       colsample_bytree = 0.75,
+                       min_child_weight = 0,
+                       subsample = 0.5)
+
+ctrl <- trainControl(method="repeatedcv", 
+                     number=10, 
+                     repeats=5,
+                     savePredictions=TRUE, 
+                     classProbs=FALSE,
+                     summaryFunction = multiClassSummary)
+```
+#AAPL XGB
+```{r}
+set.seed(1)
+AAPL_xgb_model = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = AAPL_train
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+```{r}
+AAPL_test_Xgb =AAPL_xgb_model%>%
+  predict(AAPL_test)
+
+confusionMatrix(as.factor(AAPL_test_Xgb),as.factor(AAPL_test$Class))
+
+```
+
+```{r}
+ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_Xgb))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#AMZN XGB
+```{r}
+set.seed(1)
+AMZN_xgb_model = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = AMZN_train
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+```{r}
+AMZN_test_Xgb =AMZN_xgb_model%>%
+  predict(AMZN_test)
+
+confusionMatrix(as.factor(AMZN_test_Xgb),as.factor(AMZN_test$Class))
+
+```
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(AMZN_test_Xgb))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#SBUX XGB
+```{r}
+set.seed(1)
+SBUX_xgb_model = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = SBUX_train
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+```{r}
+SBUX_test_Xgb =SBUX_xgb_model%>%
+  predict(SBUX_test)
+confusionMatrix(as.factor(SBUX_test_Xgb),as.factor(SBUX_test$Class))
+```
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_Xgb))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#rf AAPL 
+```{r}
+#mtry: Number of random variables collected at each split. In normal equal square number columns.
+mtry <- sqrt(ncol(AAPL_train))
+#ntree: Number of trees to grow.
+ntree <- 3
+
+
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3,
+                        search = 'random')
+
+#Random generate 15 mtry values with tuneLength = 15
+set.seed(1)
+rf_random_AAPL <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                   data = AAPL,
+                   method = 'rf',
+                   metric = 'Accuracy',
+                   tuneLength  = 15, 
+                   trControl = control)
+print(rf_random_AAPL)
+```
+
+```{r}
+set.seed(1)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_AAPL <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = AAPL_train, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+```{r}
+#plot(rf_AAPL$results$mtry,rf_AAPL$results$RMSE)
+AAPL_test_rf =rf_AAPL%>%
+  predict(AAPL_test)
+
+confusionMatrix(as.factor(AAPL_test_rf),as.factor(AAPL_test$Class))
+```
+```{r}
+ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_rf))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#RF AMZN
+
+```{r}
+set.seed(1)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_AMZN <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = AMZN_train, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+```{r}
+#plot(rf_AAPL$results$mtry,rf_AAPL$results$RMSE)
+AMZN_test_rf =rf_AMZN%>%
+  predict(AMZN_test)
+confusionMatrix(as.factor(AMZN_test_rf),as.factor(AMZN_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(AMZN_test_rf))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+#RF SBUX
+```{r}
+set.seed(1)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_SBUX <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = SBUX_train, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+```{r}
+
+SBUX_test_rf =rf_SBUX%>%
+  predict(SBUX_test)
+confusionMatrix(as.factor(SBUX_test_rf),as.factor(SBUX_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_rf))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+#Rose
+
+```{r}
+
+
+#Perform ROSE using specific library
+set.seed(7)
+rose_train_AAPL = ROSE(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                   data  = AAPL_train)$data  
+rose_train_AMZN = ROSE(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                   data  = AMZN_train)$data  
+rose_train_SBUX = ROSE(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                   data  = SBUX_train)$data  
+```
+
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+set.seed(1)
+SVM_cv_rose_AAPL<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = rose_train_AAPL, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+#AAPL SVM Rose
+```{r}
+AAPL_test_SVM_R =SVM_cv_rose_AAPL%>%
+  predict(AAPL_test)
+#Evaluate predictions
+library(pROC) #For building ROC curve
+AAPL_test$Class<-as.character(AAPL_test$Class)
+ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_SVM_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+```{r}
+confusionMatrix(as.factor(AAPL_test_SVM_R),as.factor(AAPL_test$Class))
+```
+#AMZN SVM Rose
+
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+set.seed(1)
+Amazon_SVM_cv_R<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = rose_train_AMZN, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+```{r}
+Amazon_test_SVM_R =Amazon_SVM_cv_R%>%
+  predict(AMZN_test)
+confusionMatrix(as.factor(Amazon_test_SVM_R),as.factor(AMZN_test$Class))
+```
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(Amazon_test_SVM_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+
+#SBUX SVM Rose
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+set.seed(1)
+SBUX_SVM_cv_R<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = rose_train_SBUX, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+
+```{r}
+SBUX_test_SVM_R =SBUX_SVM_cv_R%>%
+  predict(SBUX_test)
+confusionMatrix(as.factor(SBUX_test_SVM_R),as.factor(SBUX_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_SVM_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#AAPL XGB Rose
+```{r}
+set.seed(1)
+AAPL_xgb_model_R = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = rose_train_AAPL
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+```{r}
+AAPL_test_Xgb_R =AAPL_xgb_model_R%>%
+  predict(AAPL_test)
+
+confusionMatrix(as.factor(AAPL_test_Xgb_R),as.factor(AAPL_test$Class))
+
+```
+```{r}
+ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_Xgb_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#AMZN XGB Rose
+```{r}
+set.seed(1)
+AMZN_xgb_model_R = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = rose_train_AMZN
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+```{r}
+AMZN_test_Xgb_R =AMZN_xgb_model_R%>%
+  predict(AMZN_test)
+
+confusionMatrix(as.factor(AMZN_test_Xgb_R),as.factor(AMZN_test$Class))
+
+```
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(AMZN_test_Xgb_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+
+#SBUX XGB Rose
+
+```{r}
+set.seed(1)
+SBUX_xgb_model_R = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = rose_train_SBUX
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+```{r}
+SBUX_test_Xgb_R =SBUX_xgb_model_R%>%
+  predict(SBUX_test)
+confusionMatrix(as.factor(SBUX_test_Xgb_R),as.factor(SBUX_test$Class))
+```
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_Xgb_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+
+# AAPL RF Rose
+
+```{r}
+set.seed(1)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_AAPL_R <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = rose_train_AAPL, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+```{r}
+#plot(rf_AAPL$results$mtry,rf_AAPL$results$RMSE)
+AAPL_test_rf_R =rf_AAPL_R%>%
+  predict(AAPL_test)
+
+confusionMatrix(as.factor(AAPL_test_rf_R),as.factor(AAPL_test$Class))
+```
+```{r}
+ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_rf_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+# AMZN RF Rose
+```{r}
+set.seed(1)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_AMZN_R <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = rose_train_AMZN, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+```{r}
+#plot(rf_AAPL$results$mtry,rf_AAPL$results$RMSE)
+AMZN_test_rf_R =rf_AMZN_R%>%
+  predict(AMZN_test)
+confusionMatrix(as.factor(AMZN_test_rf_R),as.factor(AMZN_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(AMZN_test_rf_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+# SBUX RF Rose
+```{r}
+set.seed(1)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_SBUX_R <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = rose_train_SBUX, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+```{r}
+
+SBUX_test_rf_R=rf_SBUX_R%>%
+  predict(SBUX_test)
+confusionMatrix(as.factor(SBUX_test_rf_R),as.factor(SBUX_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_rf_R))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+```{r}
+#Perform ROSE using specific library
+set.seed(9)
+AAPL_train$Class = as.factor(AAPL_train$Class)
+AMZN_train$Class = as.factor(AMZN_train$Class)
+SBUX_train$Class = as.factor(SBUX_train$Class)
+
+smote_train_AAPL = SMOTE(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                   data  = AAPL_train)
+smote_train_AMZN = SMOTE(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                   data  = AMZN_train)
+smote_train_SBUX = SMOTE(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                   data  = SBUX_train)
+```
+
+#AAPL SVM SMOTE
+```{r}
+set.seed(10)
+SVM_cv_smote_AAPL<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = smote_train_AAPL, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+```{r}
+AAPL_test_SVM_S =SVM_cv_smote_AAPL%>%
+  predict(AAPL_test)
+#Evaluate predictions
+library(pROC) #For building ROC curve
+AAPL_test$Class<-as.character(AAPL_test$Class)
+  ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_SVM_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+```{r}
+confusionMatrix(as.factor(AAPL_test_SVM_S),as.factor(AAPL_test$Class))
+```
+
+#AMZN SVM SMOTE
+
+```{r}
+set.seed(10)
+Amazon_SVM_cv_S<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = smote_train_AMZN, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+```{r}
+Amazon_test_SVM_S =Amazon_SVM_cv_S%>%
+  predict(AMZN_test)
+confusionMatrix(as.factor(Amazon_test_SVM_S),as.factor(AMZN_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(Amazon_test_SVM_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#SBUX SVM SMOTE
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+```{r}
+set.seed(10)
+SBUX_SVM_cv_S<- train(Class	~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = smote_train_SBUX, method = "svmRadial", trControl = train_control, preProcess = c("center","scale"), tuneLength = 10)
+```
+
+
+```{r}
+SBUX_test_SVM_S =SBUX_SVM_cv_S%>%
+  predict(SBUX_test)
+confusionMatrix(as.factor(SBUX_test_SVM_S),as.factor(SBUX_test$Class))
+```
+
+
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_SVM_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+
+#AAPL XGB SMOTE
+
+```{r}
+set.seed(11)
+AAPL_xgb_model_S = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = smote_train_AAPL
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+
+
+```{r}
+AAPL_test_Xgb_S =AAPL_xgb_model_S%>%
+  predict(AAPL_test)
+
+confusionMatrix(as.factor(AAPL_test_Xgb_S),as.factor(AAPL_test$Class))
+
+```
+
+```{r}
+ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_Xgb_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+#AMZN XGB SMOTE
+
+```{r}
+set.seed(11)
+AMZN_xgb_model_S = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = smote_train_AMZN
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+
+
+```{r}
+AMZN_test_Xgb_S =AMZN_xgb_model_S%>%
+  predict(AMZN_test)
+
+confusionMatrix(as.factor(AMZN_test_Xgb_S),as.factor(AMZN_test$Class))
+
+```
+
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(AMZN_test_Xgb_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#SBUX XGB SMOTE
+
+```{r}
+set.seed(11)
+SBUX_xgb_model_S = train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv, data = smote_train_SBUX
+                  ,  
+                  trControl =ctrl ,
+                    method = "xgbTree",
+                  tuneGrid = xgbgrid)
+
+```
+
+
+```{r}
+SBUX_test_Xgb_S =SBUX_xgb_model_S%>%
+  predict(SBUX_test)
+
+confusionMatrix(as.factor(SBUX_test_Xgb_S),as.factor(SBUX_test$Class))
+
+```
+
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_Xgb_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+
+
+#AAPL RF SMOTE
+
+```{r}
+set.seed(12)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_AAPL_S <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = smote_train_AAPL, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+
+
+
+```{r}
+#plot(rf_AAPL$results$mtry,rf_AAPL$results$RMSE)
+AAPL_test_rf_S =rf_AAPL_S%>%
+  predict(AAPL_test)
+confusionMatrix(as.factor(AAPL_test_rf_S),as.factor(AAPL_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(AAPL_test$Class),as.numeric(AAPL_test_rf_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+#AMZN RF SMOTE
+```{r}
+set.seed(12)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_AMZN_S <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = smote_train_AMZN, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+
+
+
+```{r}
+#plot(rf_AMZN$results$mtry,rf_AMZN$results$RMSE)
+AMZN_test_rf_S =rf_AMZN_S%>%
+  predict(AMZN_test)
+confusionMatrix(as.factor(AMZN_test_rf_S),as.factor(AMZN_test$Class))
+```
+
+
+```{r}
+ValidRoc = roc(as.numeric(AMZN_test$Class),as.numeric(AMZN_test_rf_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```
+
+
+#SBUX RF SMOTE
+```{r}
+set.seed(12)
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3)
+rf_SBUX_S <- train(Class~RSI_Close+EMAcross_Close+	MACDsignal+	SMI+	stochWPR+	ADX+	CCI+	CMO+	ROC+obv,
+                            data = smote_train_SBUX, 
+                            method = "rf",
+                            trControl = control,
+                            tuneLength = 8,
+                            ntree = 200,
+                            importance = TRUE)
+```
+
+
+
+```{r}
+#plot(rf_SBUX$results$mtry,rf_SBUX$results$RMSE)
+SBUX_test_rf_S =rf_SBUX_S%>%
+  predict(SBUX_test)
+confusionMatrix(as.factor(SBUX_test_rf_S),as.factor(SBUX_test$Class))
+```
+
+```{r}
+ValidRoc = roc(as.numeric(SBUX_test$Class),as.numeric(SBUX_test_rf_S))
+plot.roc(ValidRoc) #Plots ROC curve
+ValidRoc$auc  #Area Under the Curve
+```

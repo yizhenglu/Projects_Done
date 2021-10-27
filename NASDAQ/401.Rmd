@@ -1,0 +1,414 @@
+---
+title: '401'
+author: "YZL"
+date: "9/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyquant)
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(car)
+library(lubridate)
+library(stargazer)
+library(ggplot2)
+library(zoo)
+library(gridExtra)
+```
+
+
+
+```{r}
+all_derived_eps <- read.csv("/Users/yizhenglu/Downloads/Stock essay/quartely_all_eps.csv")
+```
+
+
+
+```{r}
+all_derived_eps<-all_derived_eps%>%
+  mutate(year =year(Report.Date))
+```
+
+```{r}
+eps_2015<-all_derived_eps%>%
+  filter(year>=2015)
+```
+
+
+
+
+```{r}
+daily_price <- read.csv("/Users/yizhenglu/Downloads/Stock essay/daily_price.csv")
+daily_price<-daily_price%>%
+  mutate(year =year(Date))
+daily_price_2014<-daily_price%>%
+  filter(year>=2014)
+```
+```{r}
+#Calculate	a	3-period	relative	strength	index	(RSI)	off	the	Close	price 
+RSI_Close	<- RSI(daily_price_2014[,c("Close")],	n	= 3)
+#	5-period	exponential	moving	average	(EMA)
+EMA_Close	<- EMA(daily_price_2014[,c("Close")],	n	= 5)
+# difference	between	the	Close	price	and	our	5-period	EMA
+EMAcross_Close	<- daily_price_2014[,c("Close")]	- EMA_Close
+
+#Calculate	a	MACD	with	standard	parameters
+macd <- MACD(daily_price_2014[,c("Close")], nFast=12, nSlow=26,
+               nSig=9, percent=FALSE)
+#Grab	just	the	signal	line	to	use	as	our	indicator
+MACDsignal	<- macd[,	2]
+```
+
+```{r}
+SMI<-SMI(daily_price_2014[,c("High","Low","Close")], n = 13, nFast = 2, nSlow = 25, nSig = 9)
+SMI	<- SMI[,	1]
+```
+
+
+```{r}
+#Commodity	Channel	Index	with	standard	parameters
+CCI	<- CCI(daily_price_2014[,c("High","Low","Close")],	n	= 14)
+#Chande Momentum Oscillator	with	standard	parameters
+CMO	<- CMO(daily_price_2014[,c("Close")],	n	= 14)
+ROC	<- ROC(daily_price_2014[,c("Close")],	n	= 2)
+```
+```{r}
+daily_ADX  <- ADX(daily_price_2014[,c("High","Low","Close")],n=14)
+obv <- OBV(daily_price_2014[,"Close"], daily_price_2014[,"Volume"])
+stochWPR<- WPR(daily_price_2014[,c("High","Low","Close")],n=14)
+  
+```
+```{r}
+#predictors
+daily_price_2014<- mutate(daily_price_2014, PriceChange = Close - lag(Close))
+```
+
+
+
+```{r}
+cbind_daily<- cbind(daily_price_2014,RSI_Close,EMAcross_Close,MACDsignal,SMI,CCI,CMO,ROC,daily_ADX,obv,stochWPR)
+```
+
+
+
+
+```{r}
+cbind_daily_2015<-cbind_daily%>%
+  filter(year>=2015)
+```
+
+
+```{r}
+cbind_daily_2015$Date <- as.Date(cbind_daily_2015$Date)
+```
+
+
+
+```{r}
+quarter_price_2015<-cbind_daily_2015%>%
+  select(Ticker,Date,Open,Low,High,Close,Adj..Close,Volume,Shares.Outstanding,year,ADX,obv,stochWPR)%>%
+  filter(Date ==as.Date("2015-03-31")|Date ==as.Date("2015-06-30")|Date ==as.Date("2015-09-30")|Date ==as.Date("2015-12-31")|Date ==as.Date("2016-03-31")|Date ==as.Date("2016-06-30")|Date ==as.Date("2016-09-30")|Date ==as.Date("2016-12-30")|Date ==as.Date("2017-03-31")|Date ==as.Date("2017-06-30")|Date ==as.Date("2017-09-29")|Date ==as.Date("2017-12-29")|Date ==as.Date("2018-03-29")|Date ==as.Date("2018-06-29")|Date ==as.Date("2018-09-28")|Date ==as.Date("2018-12-31")|Date ==as.Date("2019-03-29")|Date ==as.Date("2019-06-28")|Date ==as.Date("2019-09-30")|Date ==as.Date("2019-12-31")|Date ==as.Date("2020-03-31")|Date ==as.Date("2020-06-30")|Date ==as.Date("2020-09-30"))
+```
+
+```{r}
+quarter_price_2015<-quarter_price_2015%>%
+  mutate(month=month(Date))
+```
+
+```{r}
+quarter_price_2015 <-quarter_price_2015%>%
+  mutate(Date =case_when(month=="3"~ "Q1"))
+quarter_price_2015$Date[quarter_price_2015$month ==6] <- "Q2"
+quarter_price_2015$Date[quarter_price_2015$month ==9] <- "Q3"
+quarter_price_2015$Date[quarter_price_2015$month ==12] <- "Q4"
+quarter_price_2015<-select(quarter_price_2015,-c("month"))
+```
+
+```{r}
+quarter_price_2015$Fiscal.Period<-quarter_price_2015$Date
+quarter_price_2015<-select(quarter_price_2015,-c("Date"))
+```
+
+```{r}
+oil_price <- read.csv("/Users/yizhenglu/Downloads/Stock essay/end_quarter/oil_price.csv")
+oil_price<-oil_price%>%
+  mutate(year =year(DATE))%>%
+  mutate(month =month(DATE))
+```
+#Oil Price
+```{r}
+oil_price <-oil_price%>%
+  mutate(Fiscal.Period =case_when(month=="1"~ "Q1"))
+oil_price$Fiscal.Period[oil_price$month ==4] <- "Q2"
+oil_price$Fiscal.Period[oil_price$month ==7] <- "Q3"
+oil_price$Fiscal.Period[oil_price$month ==10] <- "Q4"
+
+```
+```{r}
+oil_price$Oil_price_quarter <- oil_price$DCOILWTICO
+oil_price<-select(oil_price,-c(2))
+oil_price<-select(oil_price,-c(1,3))
+```
+
+#Natural Rate of Unemployment (Long-Term)
+```{r}
+UNRATE <- read.csv("/Users/yizhenglu/Downloads/Stock essay/end_quarter/UNRATE.csv")
+UNRATE<-UNRATE%>%
+  mutate(year =year(DATE))%>%
+  mutate(month =month(DATE))
+
+UNRATE <-UNRATE%>%
+  mutate(Fiscal.Period =case_when(month=="1"~ "Q1"))
+UNRATE$Fiscal.Period[UNRATE$month ==4] <- "Q2"
+UNRATE$Fiscal.Period[UNRATE$month ==7] <- "Q3"
+UNRATE$Fiscal.Period[UNRATE$month ==10] <- "Q4"
+
+UNRATE<-select(UNRATE,-c(1,4))
+
+```
+
+#CPI
+```{r}
+
+CPI_rate <- read.csv("/Users/yizhenglu/Downloads/Stock essay/end_quarter/CPI.csv")
+CPI_rate<-CPI_rate%>%
+  mutate(year =year(DATE))%>%
+  mutate(month =month(DATE))
+
+CPI_rate <-CPI_rate%>%
+  mutate(Fiscal.Period =case_when(month=="1"~ "Q1"))
+CPI_rate$Fiscal.Period[CPI_rate$month ==4] <- "Q2"
+CPI_rate$Fiscal.Period[CPI_rate$month ==7] <- "Q3"
+CPI_rate$Fiscal.Period[CPI_rate$month ==10] <- "Q4"
+
+CPI_rate$CPI_Quarter <- CPI_rate$CPALTT01USM657N
+CPI_rate<-select(CPI_rate,-c(1,2,4))
+
+```
+
+
+
+#exchange rates
+```{r}
+ex_rate<- read.csv("/Users/yizhenglu/Downloads/Stock essay/end_quarter/exchange_rate.csv")
+
+ex_rate<-ex_rate%>%
+  mutate(year =year(DATE))%>%
+  mutate(month =month(DATE))
+
+ex_rate <-ex_rate%>%
+  mutate(Fiscal.Period =case_when(month=="1"~ "Q1"))
+ex_rate$Fiscal.Period[ex_rate$month ==4] <- "Q2"
+ex_rate$Fiscal.Period[ex_rate$month ==7] <- "Q3"
+ex_rate$Fiscal.Period[ex_rate$month ==10] <- "Q4"
+
+ex_rate$ex_rate <- ex_rate$DEXCHUS
+
+ex_rate<-select(ex_rate,-c(1,2,4))
+```
+
+
+
+#GDP
+```{r}
+GDP<- read.csv("/Users/yizhenglu/Downloads/Stock essay/end_quarter/GDP.csv")
+
+GDP<-GDP%>%
+  mutate(year =year(DATE))%>%
+  mutate(month =month(DATE))
+
+GDP <-GDP%>%
+  mutate(Fiscal.Period =case_when(month=="1"~ "Q1"))
+GDP$Fiscal.Period[GDP$month ==4] <- "Q2"
+GDP$Fiscal.Period[GDP$month ==7] <- "Q3"
+GDP$Fiscal.Period[GDP$month ==10] <- "Q4"
+
+GDP$GDP <- GDP$GDP
+GDP<-select(GDP,-c(1,4))
+```
+
+```{r}
+Inflation<- read.csv("/Users/yizhenglu/Downloads/Stock essay/end_quarter/Inflation.csv")
+
+Inflation<-Inflation%>%
+  mutate(year =year(DATE))%>%
+  mutate(month =month(DATE))
+
+Inflation <-Inflation%>%
+  mutate(Fiscal.Period =case_when(month=="1"~ "Q1"))
+Inflation$Fiscal.Period[Inflation$month ==4] <- "Q2"
+Inflation$Fiscal.Period[Inflation$month ==7] <- "Q3"
+Inflation$Fiscal.Period[Inflation$month ==10] <- "Q4"
+
+Inflation$Inflation <- Inflation$T10YIE
+Inflation<-select(Inflation,-c(1,2,4))
+```
+
+
+
+
+```{r}
+
+```
+
+```{r}
+CPI_UNRATE_Oil<-merge(CPI_rate,UNRATE, by=c("Fiscal.Period","year"))
+CPI_UNRATE_Oil<-merge(oil_price,CPI_UNRATE_Oil,by=c("Fiscal.Period","year"))
+CPI_UNRATE_Oil_EX<-merge(ex_rate,CPI_UNRATE_Oil,by=c("Fiscal.Period","year"))
+CPI_UNRATE_Oil_EX_GDP <-merge(GDP,CPI_UNRATE_Oil_EX,by=c("Fiscal.Period","year"))
+CPI_UNRATE_Oil_EX_GDP_Inf <-merge(Inflation,CPI_UNRATE_Oil_EX_GDP,by=c("Fiscal.Period","year"))
+```
+```{r}
+#Combine year and Fiscal.Period for graph
+CPI_UNRATE_Oil_EX_GDP_Inf<-within(CPI_UNRATE_Oil_EX_GDP_Inf, YQ <- paste(year, Fiscal.Period, sep=''))
+
+```
+
+
+```{r}
+CPI_UNRATE_Oil_EX_GDP_Inf$YQ <- as.Date(as.yearqtr(CPI_UNRATE_Oil_EX_GDP_Inf$YQ))
+
+
+plot1<-ggplot(CPI_UNRATE_Oil_EX_GDP_Inf) +
+    geom_line(aes(x=YQ, y=Inflation,color="Inflation"))+
+    geom_line(aes(x=YQ, y=CPI_Quarter,color="CPI"))+
+    geom_line(aes(x=YQ,y=UNRATE,color="Unemployment "))+
+    geom_line(aes(x=YQ,y=log(Oil_price_quarter),color="log of Oil Price "))+
+    geom_line(aes(x=YQ,y=ex_rate,color="Ex_rate "))+
+    ylab("Values")+
+    ggtitle("Variables Trend From 2015 Q1 to 2020Q2")+
+  xlab("Years and Quarter")
+
+plot2<-ggplot(CPI_UNRATE_Oil_EX_GDP_Inf) +
+  geom_line(aes(x=YQ,y=GDP,color= "GDP"))+
+  ylab("Values")+
+  ggtitle("GDP Trend From 2015 Q1 to 2020Q2")+
+  xlab("Years and Quarter")
+grid.arrange(plot1, plot2)
+  
+```
+
+
+```{r}
+eps_2015_com<-merge(eps_2015,CPI_UNRATE_Oil_EX_GDP_Inf,by=c("Fiscal.Period","year"))
+```
+```{r}
+complete_2015 <-merge(eps_2015_com,quarter_price_2015,by=c("Fiscal.Period","year","Ticker"))
+```
+
+```{r}
+complete_2015<-select(complete_2015,-c("Publish.Date","Restated.Date"))
+```
+
+
+
+```{r}
+complete_2015<-as.data.frame.matrix(complete_2015) 
+
+```
+
+```{r}
+factors_pps<-complete_2015%>%
+  select(Fiscal.Period,year,Ticker,Report.Date,Return.on.Equity, Return.on.Assets,Earnings.Per.Share..Basic,Equity.Per.Share, Inflation,GDP,           ex_rate,Oil_price_quarter,CPI_Quarter,UNRATE,Close)
+```
+
+
+
+```{r}
+summary(factors_pps)
+```
+
+
+  In our example, if we ran a regression of price, ad and location on volume, we would get a result with an R-squared of 0.1915。 This shows that 19.15% of the variation in volume can be explained by the other variables.
+  VIF measures how much of the variation in one variable is explained by the other variable.
+
+```{r}
+factors_pps_omit <- na.omit(factors_pps)
+
+```
+
+
+
+```{r}
+#factors_pps_omit is after na.omit, the dataset is to see what factors may affect stock prices.
+linear1<-lm(Close~GDP+Oil_price_quarter+ex_rate+CPI_Quarter+UNRATE+Inflation+Return.on.Assets+Return.on.Equity+Earnings.Per.Share..Basic+Equity.Per.Share,data =factors_pps_omit )
+summary(linear1)
+```
+
+
+```{r}
+summary(factors_pps_omit)
+```
+
+```{r}
+#Remove year, ticker, Report.Date, Fiscal.Period
+factors_pps_omit_remdouble<-factors_pps_omit%>%
+  select(-c(1,2,3,4))
+```
+
+
+
+
+
+```{r}
+cor(factors_pps_omit_remdouble,method = c("pearson"))
+```
+
+
+```{r}
+library(ggcorrplot)
+ggcorrplot(cor(factors_pps_omit_remdouble))+
+  ggtitle("Correlation Coefficients between variables.")
+```
+
+```{r}
+vif(linear1)
+```
+
+    From the correlation plot, it shows Oil_price_quarter has a high positive correlation with Inflation. The VIF function tells Oil_price_quarter has a high VIF score. This probably be problematic due to the multicolnearity issue. Therefore, I would like to drop this variable in future models.
+```{r}
+linear2<-lm(Close~GDP+ex_rate+CPI_Quarter+UNRATE+Inflation+Return.on.Assets+Return.on.Equity+Earnings.Per.Share..Basic+Equity.Per.Share,data =factors_pps_omit )
+summary(linear2)
+```
+```{r}
+vif(linear2)#Vif After deleting Oil_price
+```
+
+```{r}
+linear3<-lm(Close~GDP+Oil_price_quarter+ex_rate+CPI_Quarter+UNRATE+Return.on.Assets+Return.on.Equity+Earnings.Per.Share..Basic+Equity.Per.Share,data =factors_pps_omit )
+summary(linear3)
+```
+```{r}
+vif(linear3) #VIF after deleting inflation
+```
+
+```{r}
+stargazer(linear1, linear2,linear3, title="Regression Results",type = "text")
+```
+
+    The linear 1 shows that adjusted R2 , the model explains 19.1% of the variation on
+    stock prices. The estimated coefficients of UNRATE,EVPS,ROA, GDP, and EPS are statistically significant  of significance.
+    as expected,  GDP and EPS are positive impact on stock prices. However, EVPS's negative impact on stock prices.
+    However, Oil_price and CPI and inflation rate are not expected because they are not statistically significant.
+    Then I run a multicollinearity test among those variables. The multicollinearity test shows Oil_price and inflation rate have a strong collinearity.
+    
+    The linear 2 shows I removed th oil_price. Similarly, UNRATE,EVPS,ROA, GDP, and EPS are statistically significant  of significance. Furthermore, Inflation becomes statistically significant as well. However, unexpectedly, the coefficient for Inflation rate was positive.
+    
+    The linear 3 shows when removing inflation and keep oil_price, the GDP is statistically significant but less than the linear 2. Futhermore, oil_price becomes statistically significant as well.  Unexpectedly, the coefficient for oil_price rate was positive.
+    
+
+
+
+```{r}
+#Run this when you need
+#write_csv(cbind_daily_2015,"Predictions data.csv")
+```
+
+
+
+
