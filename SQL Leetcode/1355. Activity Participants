@@ -1,0 +1,8 @@
+with t1 as 
+(select activity, count(*) as times from friends group by activity)
+
+Select activity 
+from t1
+where times>(select min(times) from t1 ) and times <(select max(times) from t1)
+
+1.创建一个 临时表，计算times
