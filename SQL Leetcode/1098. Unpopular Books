@@ -1,0 +1,10 @@
+select b.book_id, b.name
+from books b
+where book_id not in (select book_id from orders
+  where dispatch_date >= '2018-06-23' and dispatch_date <= '2019-06-22'
+group by book_id
+having sum(quantity) >=10)
+and available_from < '2019-05-23'
+
+1.一年内卖出10本以上的
+2. 不要上个月才上市的
