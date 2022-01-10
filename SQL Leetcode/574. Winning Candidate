@@ -1,0 +1,17 @@
+with cte as (  
+    SELECT c.name, count(candidateId)AS cand
+
+  FROM vote v
+  join candidate c 
+  on c.id = v.candidateId
+  group by c.id
+)
+ 
+ 
+select name 
+from cte
+where cand in (select max(cand) from cte)
+
+
+1. 先计算出每个id 被投的次数 -临时表
+2. 选出最大的次数
