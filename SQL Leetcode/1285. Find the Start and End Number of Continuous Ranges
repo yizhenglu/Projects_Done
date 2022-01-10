@@ -1,0 +1,12 @@
+
+select min(log_id) as start_id,
+        max(log_id) as end_id
+From (
+    select log_id,
+    rank()over(order by log_id) as num
+    from logs) a
+    group by log_id-num
+
+解题思路:
+1. 找出连续的最小值 最大值
+2. 用rank 函数 进行排列， 如果数值为连续数，则log_id - rank 后的排序为固定。 
