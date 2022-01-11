@@ -12,7 +12,23 @@ class Solution:
             else:
                 high = mid - 1
         return -1
-        
+ 1.       在list 里面找相应的数据
+ 2. binary search 效率高
+ 3. 先找所有数据中的 中位数
+ 4. 如果该中位数小于 真实值， 从开头到 该数 再找一个 中位数
+ 5.以此循环
+ 6.如果 该中位数大于真实值， 从该数 到末尾 找中位数
+ 
+ 模板:
+ def binary(l,r):
+    While l<r:
+    m = l+(r-1)//2 #中位数
+        if f(m): return m #optional
+        if g(m):# 为list
+            r= m
+         else：
+         l = m+1
+    return 1
         
   
   class Solution:
