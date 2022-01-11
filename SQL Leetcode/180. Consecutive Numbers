@@ -1,0 +1,26 @@
+with cte as
+(
+select id, num, lead(num,1) over ( order by id asc) as nextnum, lead(num,2) over (order by id asc) as nextnum2
+from logs
+
+)
+
+select distinct num as "ConsecutiveNums"
+from cte
+where num = nextnum and num = nextnum2
+
+1.lead 窗口 向前查看第一个， 向前查看第两个
+1. 前面一个= 当前的，然后第前两个= num
+
+
+
+with a as (
+select *,lag(num,1) over(order by id) as num1, lag(num,2) over(order by id) num2 from Logs
+) 
+
+select distinct num as ConsecutiveNums from a where num= num1 and num=num2;
+
+1.lag 就是向后走
+
+
+
