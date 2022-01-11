@@ -1,0 +1,12 @@
+with cte as(
+    select d.name as Department, E.name as Employee, dense_rank() over(partition by E.departmentId order by salary desc) as S,salary
+from Employee E
+join department d
+on E.departmentId = d.id
+)
+
+select Department,Employee, salary as Salary
+from cte
+where S=1
+
+1.能用就是有点慢
