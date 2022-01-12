@@ -1,0 +1,11 @@
+class Solution:
+    def isValid(self, s: str) -> bool:
+        stack = [] 
+        whole = {"{":"}","[":"]","(":")"}
+        for i in s: # 如果
+            if i in whole:
+                stack.append(i)
+                #print(stack)
+            elif len(stack)==0 or whole[stack.pop()]!= i: # == or != , 如果刚开始 S=“}" 这种情况 需要考虑 len(stack) ==0，如果0 则为false, 或者 stack 最后一个数字不等于i 就是 false
+                return False
+        return len(stack)==0  #如果return True 那么会报错，因为 开头也有可能"{”
