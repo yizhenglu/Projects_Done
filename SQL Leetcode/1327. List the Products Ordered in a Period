@@ -1,0 +1,11 @@
+with cte as (
+select sum(unit) as unit,product_id
+from orders where order_date between '2020-2-01' and '2020-2-29' group by product_id 
+
+)
+
+select p.product_name, cte.unit
+from cte
+join products p
+on p.product_id = cte.product_id
+where cte.unit >= 100 
