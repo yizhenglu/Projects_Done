@@ -1,0 +1,5 @@
+select actor_id,director_id
+from ActorDirector 
+group by actor_id, director_id # 1,1 为一组, 1,2 为第二组 以此类推
+having count(actor_id =director_id ) >=3
+
