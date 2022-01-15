@@ -1,0 +1,15 @@
+    def maxSubArray(self, nums: List[int]) -> int:
+        if max(nums)<0:
+            return max(nums)
+        glob = 0
+        local = 0
+        for i in nums:
+            local = max(0,local+i)
+            glob = max(glob,local)
+        return glob
+
+
+
+1. 设立glob 和local 为0
+2. 用该数字比较前数字和
+3.如果为大的 依次迭代
