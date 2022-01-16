@@ -1,0 +1,13 @@
+with cte as (
+    SELECT A.employee_id, amount, pay_date,department_id, LEFT(pay_date,7) as pay_month, AVG(amount) OVER(PARTITION BY A.pay_date) AS company_avg_salary,AVG(amount) OVER(PARTITION BY A.pay_date, B.department_id) AS department_avg_salary
+from salary A
+join employee B
+on A.employee_id = B.employee_id
+    )
+    
+select distinct pay_month,department_id,(case when company_avg_salary = department_avg_salary then 'same' when  company_avg_salary > department_avg_salary then 'lower' when company_avg_salary < department_avg_salary then 'higher' end)
+as comparison
+from cte
+order by pay_month desc
+
+1.首先算出 公司平均工资利用窗口函数，同理可得 部门平均，部门平均需要 根据日期 部门来计算
