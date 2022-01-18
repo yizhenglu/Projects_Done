@@ -1,0 +1,9 @@
+class Solution:
+    def middleNode(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        slow = fast = head
+        while fast and fast.next:# 当 fast 和 fast next 存在的时候 执行以下， 当 fast next 不存在 那么终止循环  while fast != None and fast.next != None:
+            slow = slow.next
+            fast = fast.next.next
+        return slow
+        
+        
