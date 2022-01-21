@@ -1,0 +1,9 @@
+with cte as (
+select transaction_id, dense_rank () over (partition by left(day,10) order by amount desc) as rk,amount, left(day,10) as  day
+from transactions
+    )
+    
+select transaction_id
+from cte
+where rk = 1
+order by 1
