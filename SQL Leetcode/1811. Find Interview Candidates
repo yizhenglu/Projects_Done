@@ -1,0 +1,28 @@
+with ct1 as (
+select contest_id, gold_medal as user_id
+from contests
+group by gold_medal
+having count(gold_medal)>=3 ),
+
+cte as (
+
+select contest_id, gold_medal as user_id
+from contests
+union all 
+select contest_id, silver_medal
+from contests
+union all 
+select contest_id, bronze_medal
+from contests
+    ),
+    
+ct3 as (
+select contest_id, user_id
+from cte 
+where (contest_id+1, user_id) in (select contest_id, user_id from cte) # 连续三个一样的， 比如说  (190, 1), (190, 5), (190, 2)， 那么 每个加一 (191, 1), (191, 5), (191, 2) 其中 5 2 都存在 在cte的表格中
+ and (contest_id+2, user_id) in (select contest_id, user_id from cte))
+ 
+ 
+select name, mail
+from users
+where user_id in (select user_id from ct1) or user_id in (select user_id from ct3)
