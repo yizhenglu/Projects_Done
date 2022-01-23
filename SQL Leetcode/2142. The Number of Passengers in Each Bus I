@@ -1,0 +1,14 @@
+with cte as (
+   SELECT passenger_id, MIN(b.arrival_time) AS arrival_time
+    FROM Passengers p
+    INNER JOIN Buses b
+    ON p.arrival_time <= b.arrival_time #小于 等于 b的 arrival time，那么 123 分别为 （1）2，（6）7 7
+    GROUP BY passenger_id
+    )
+    
+SELECT bus_id, COUNT(cte.arrival_time) AS passengers_cnt
+FROM Buses b
+LEFT JOIN cte
+ON b.arrival_time = cte.arrival_time
+GROUP BY bus_id
+ORDER BY bus_id
