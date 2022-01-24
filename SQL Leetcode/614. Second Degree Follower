@@ -1,0 +1,4 @@
+select b.followee as follower, count(distinct(b.follower)) as num from follow a join follow b 
+where a.follower=b.followee
+group by b.followee
+order by a.follower asc
