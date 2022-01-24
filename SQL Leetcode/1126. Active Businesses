@@ -1,0 +1,11 @@
+
+with cte as ( 
+select business_id, avg(occurences) over(partition by event_type) as ag,occurences,event_type
+from events
+    )
+    
+select business_id
+from cte
+where cte.occurences > ag
+group by business_id
+having count(distinct event_type) > 1 # (More than one event type with 'occurences' greater than 1)
