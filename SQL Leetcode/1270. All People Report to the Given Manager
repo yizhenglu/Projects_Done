@@ -1,0 +1,5 @@
+select emp.employee_id from Employees  emp
+join Employees mngr on emp.manager_id = mngr.employee_id
+join Employees head on mngr.manager_id = head.employee_id
+where emp.employee_id != 1
+and head.manager_id = 1
