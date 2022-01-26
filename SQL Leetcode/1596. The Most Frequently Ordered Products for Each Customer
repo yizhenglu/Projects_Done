@@ -1,0 +1,11 @@
+with cte as (
+    select customer_id,product_id,product_name, dense_rank()over(partition by customer_id order by count(product_name) desc  ) as rk#count(product_id) as tm#, dense_rank() over()
+from orders
+left join products
+using(product_id)
+group by customer_id, product_name
+  )
+  
+ select distinct customer_id, product_id,product_name 
+ from cte
+ where rk =1
