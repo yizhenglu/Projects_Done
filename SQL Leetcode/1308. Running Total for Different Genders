@@ -1,0 +1,3 @@
+SELECT gender, day, 
+       SUM(score_points) OVER(PARTITION BY gender ORDER BY day) AS total # 增加 但是 是根据 partition 逐级增加
+FROM Scores
