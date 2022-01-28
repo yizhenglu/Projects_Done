@@ -1,0 +1,13 @@
+with cte as (
+select account_id, EXTRACT(month FROM day) as mnth,sum(amount)  as total_amount
+from Transactions 
+where type ='Creditor'
+group by account_id, EXTRACT(month FROM day)
+    
+ )
+    
+    
+SELECT DISTINCT a1.account_id FROM cte a1 JOIN cte a2 ON a1.account_id = a2.account_id AND a1.mnth+1 = a2.mnth# 检查月份连续
+JOIN Accounts aa
+ON a1.account_id = aa.account_id
+WHERE a1.total_amount > max_income AND a2.total_amount > max_income 
