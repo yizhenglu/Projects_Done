@@ -1,0 +1,18 @@
+ with cte1 as (
+select v.user_id,s.transaction_date, count(s.transaction_date) as ct
+from visits v
+left join transactions s
+on v.user_id = s.user_id and visit_date = s.transaction_date
+group by v.user_id,s.transaction_date
+     ),
+
+    row_nums AS (SELECT ROW_NUMBER() OVER () as rn 
+                 FROM Transactions 
+                 UNION 
+                 SELECT 0) 
+				 
+SELECT row_nums.rn as transactions_count, count(cte1.ct) as visits_count
+FROM cte1 RIGHT JOIN row_nums ON ct = rn
+WHERE rn <= (SELECT MAX(ct) FROM cte1)
+GROUP BY rn
+ORDER BY 1
