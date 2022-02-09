@@ -1,0 +1,19 @@
+WITH exam_rankings AS (SELECT 
+    student_id,
+    RANK()
+    OVER(PARTITION BY exam_id
+         ORDER BY score DESC) AS ranking,
+    RANK()
+    OVER(PARTITION BY exam_id
+         ORDER BY score ASC) AS reverse_ranking
+    FROM exam),
+    unquite_ones AS (
+    SELECT DISTINCT student_id
+    FROM exam_rankings
+    WHERE ranking = 1 OR reverse_ranking = 1)
+
+    
+SELECT *
+FROM student
+WHERE student_id IN (SELECT student_id FROM exam)
+    AND student_id NOT IN (SELECT student_id FROM unquite_ones)
