@@ -1,0 +1,11 @@
+
+with lis as
+(select distinct a.user_id as user1_id, b.user_id as user2_id from Listens a  
+join Listens b
+on a.user_id < b.user_id and a.song_id = b.song_id and a.day = b.day #通过 这一步 先找出 不同人，相同歌曲，同一天
+group by a.user_id, b.user_id, a.day   # 通过这个 来找出 歌不一样的，大于三个不同的歌曲  相当于filter吧
+having count(distinct a.song_id) >= 3)
+
+select *
+from lis
+where (user1_id, user2_id) in (select * from Friendship)
