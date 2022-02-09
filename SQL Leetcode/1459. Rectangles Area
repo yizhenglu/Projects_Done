@@ -1,0 +1,7 @@
+select pt1.id as p1, pt2.id as p2,ABS(pt2.x_value - pt1.x_value)*ABS(pt2.y_value-pt1.y_value) as AREA
+from points pt1
+join points pt2
+on pt1.id <pt2.id
+AND pt1.x_value!=pt2.x_value 
+AND pt2.y_value!=pt1.y_value
+ORDER BY AREA DESC, p1 ASC, p2 ASC
