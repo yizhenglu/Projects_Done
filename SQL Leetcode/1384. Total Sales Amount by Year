@@ -1,0 +1,19 @@
+# Recursively add 1 day on top of the period start until it reaches the period end date. So we have a column of each date a product has been sold
+with recursive t1 as (select * from sales
+                 union all
+                 select product_id, date_add(period_start, INTERVAL 1 DAY), period_end, average_daily_sales
+                 from t1
+                 where period_start < period_end)
+                 # 递归CTE，这个是 模板，  如果 period start 小于 period end, 那么 每次 date 就+1，假设 2019-01-25   | 2019-02-28 相隔35天。 那么 就会出现 35 个2019
+				 # We can find how many days a product is on sale in each year.
+				 # count the appearence of 2018, 2019 and 2020 in the recursively created column containing all date from start to end.
+				 # Total sale = number of day*average daily sale for each year respecitvely
+				 
+                 select t1.product_id, product_name, date_format(period_start, "%Y") as report_year, count(*)*average_daily_sales as total_amount
+                 from t1 join product
+                 on t1.product_id = product.product_id
+                 group by 1, 3
+                 order by 1, 3;
+                 
+                 #当我们有了 每个物品 销售的时间后，通过 count 算 有多少次销售
+                 然后通过 group by 算出 2019 卖了多少，2020 卖了多少
