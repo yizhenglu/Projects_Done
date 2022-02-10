@@ -1,0 +1,17 @@
+with cte as
+(
+SELECT id, visit_date, people,
+row_number() over(order by id) as rn #给 所有 大于100 的 计算出 row number
+FROM stadium
+where people >= 100
+), cte2 as
+
+(
+SELECT id, visit_date, people, id-rn as diff #用 当前id - row number 假设  7 8 9 为 超过100的， 那么 id-row number 为连续的三个 相同值
+from cte
+)
+select id, visit_date, people
+from cte2
+WHERE diff in (select diff from cte2
+group by diff
+having count(diff) >= 3) #那么计算出 diff 大于三就为 答案
