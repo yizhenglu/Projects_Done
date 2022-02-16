@@ -1,0 +1,9 @@
+with recursive cte as 
+(
+select 1 as ids
+    union all
+    select ids+1 from cte
+    where ids<(select max(customer_id) from customers)
+)
+select ids
+from cte where ids not in (select customer_id as ids from customers)
