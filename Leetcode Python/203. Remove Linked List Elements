@@ -1,0 +1,14 @@
+class Solution:
+    def removeElements(self, head: Optional[ListNode], val: int) -> Optional[ListNode]:
+        dummy = ListNode(float('-inf')) #给1 之前加一个虚拟变量
+        dummy.next = head #当前0 链接到head 上面
+        previous, cur = dummy,dummy.next
+        while cur:
+            if cur.val == val:
+                previous.next = cur.next #假设 cur 的值 为6, 那么我们要连接 2 和 3 那么就 3为 cur.next 2为 previous.next。 双指针移动
+            else:
+                previous = cur
+            cur = cur.next
+        return dummy.next
+                
+        
