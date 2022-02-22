@@ -1,0 +1,8 @@
+class Solution:
+    def merge(self, nums1: List[int], m: int, nums2: List[int], n: int) -> None:
+        """
+        Do not return anything, modify nums1 in-place instead.
+        """
+        for i in range(n):
+            nums1[i+m] = nums2[i] # 在nums1 的基础上+ nums2， 那么iterate nums2 就够用了
+        return nums1.sort()
