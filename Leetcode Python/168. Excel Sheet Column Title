@@ -1,0 +1,10 @@
+class Solution:
+    def convertToTitle(self, columnNumber: int) -> str:
+        ans = list()
+        while columnNumber > 0:
+            columnNumber -= 1 #27, 0, 700
+            ans.append(chr(columnNumber % 26 + 65)) # 66  =B, A
+            print(ans)
+            columnNumber = columnNumber //26 #=1  #base 26
+            print(columnNumber)
+        return "".join(ans[::-1])
