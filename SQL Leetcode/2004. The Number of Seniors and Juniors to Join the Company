@@ -12,6 +12,6 @@ SELECT employee_id, experience, SUM(salary) OVER(PARTITION BY experience ORDER B
 select "Senior" as experience, count(employee_id) as accepted_candidates  from cte where experience = 'Senior' and  RN < 70000  # 当exp 为Senior 时候 计算 递增工资小于 7000 的人数
 union all
 
-select "Junior" as experience, count(employee_id) as accepted_candidates  from cte where experience ="Junior" and RN <= (select ifnull(max(70000-RN),0) from cte where experience !="Junior" and RN< 70000)
+SELECT 'Junior' AS experience, COUNT(employee_id) AS accepted_candidates FROM CTE WHERE experience = 'Junior' AND RN < (SELECT 70000 - IFNULL(MAX(RN),0) FROM CTE WHERE experience = 'Senior' AND RN < 70000)
 
 # Junior 表的 成立需要满足于 cte 表中, RN 小于70000且 等于 senior 的最大值, 选了senior 剩下的就是 Junior (70000-RN) 
